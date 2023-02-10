@@ -1,13 +1,15 @@
-function [delta_matrix, smooth_surf, smooth_poly, Path_save_flat, Path_save_crelation, numframes, original_stack, crop_stack, flip, cmap, Cl] = cornea_delta(thres_hold, flip)
+function [delta_matrix, smooth_surf, smooth_poly, Path_save_flat, Path_save_cross_flat, Path_save_cross_unflat, numframes, original_stack, crop_stack, flip, Cl] = cornea_delta(thres_hold, flip)
 %if you want to flip the images(so that endothelium will be on top), enter
 %flip as "Y"
 Path=[pwd,'/'];
 [name,Path]=uigetfile([Path,'*.DCM'],' Choose a reference image in the format DCM. '); 
 %Ext=name(end-3:end);
 mkdir(Path,'Flat'); % Create a subfolder in the directeory
-mkdir(Path, 'cross-cor');
+mkdir(Path, 'cross_flat');
+mkdir(Path, 'cross_unflat')
 Path_save_flat=[Path,'Flat\'];
-Path_save_crelation = [Path, 'cross-cor\'];
+Path_save_cross_flat = [Path, 'cross_flat\'];
+Path_save_cross_unflat = [Path, 'cross_unflat\'];
 %count the number of files in the directories
 dcm_file = dir([Path, '*.DCM']);
 

@@ -1,12 +1,12 @@
 close all;clear all
 
-Path='E:\\3Dimage\\Intensity\\TEST\\scan67\\';
+Path='E:\\3Dimage\\POCM_System\\Human Imaging\\IR_card\\scan\\pic\\Flat\\';
 %Path='C:\\3Dimage\\Sync_Calibration\\16_microsecond_1\\pic_1 frame missed\\';
 %Path='C:\Users\Patrice TANKAM\Documents\Rochester\Program\1400-June_11_after_correction\';
 %Path='C:\Users\Patrice TANKAM\Documents\Rochester\Program\MEMS-1400_frames-corrected\';
 
- F1=load([Path,'image_1.asc']);
- F2=load([Path,'image_2.asc']);
+ F1=load([Path,'image_11.asc']);
+ F2=load([Path,'image_12.asc']);
  FF1=rot90(F1);
  FF2=rot90(F2);
 
@@ -27,7 +27,7 @@ len=length(l1);
 
 figure; plot(l1,'b'); hold on; plot(l2, 'r');grid
 
-corel=xcorr(l1,l2);
+%corel=xcorr(l1,l2);
 
 %figure; plot (corel);grid
 %[M, shift]=max(corel)
