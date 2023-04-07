@@ -1,18 +1,34 @@
-function [bowman_depth] = cornea_layer_notnormal(path, num1, y1, y2, start_offset, bowman_to_nearby_ratio)
+clear
+close all
+%% check which frame has clear stroma boundary
+Path=[pwd,'/'];
+[name,Path]=uigetfile([Path,'*.DCM'],' Choose a reference image in the format DCM. '); 
 
-%start_offset, start counting from the middle, instead of from the end to avoid 
-%noise on the boundary of the images
-%bowman_to_nearby_ratio. ratio of bowman brightness to nearby surrounding.
-%this is used to help identify the bowman. If potential layer / neaby brightness >
-%this ratio then this layer is viewd as bowman
-s1 = 'frame';
-s2 = num2str(num1);%picture number 2
-s3 = '.DCM';
-[I,~] = dicomread([path, s1, s2, s3]);
-frameC2=I(y1:y2,:);
+dcm_file = dir([Path, '*.DCM']);
+%%
+[I,cmap] = dicomread([Path, 'frame60.dcm']);
+
+imshow(I,cmap) 
+
+p = ginput(2);  % have user crop image by selecting 2 coordinate points 
+p(p<1)=1;
+x1 = min(floor(p(1)), floor(p(2))); %xmin
+y1 = min(floor(p(3)), floor(p(4))); %ymin
+x2 = max(ceil(p(1)), ceil(p(2)));   %xmax
+y2 = max(ceil(p(3)), ceil(p(4)));   %ymax
+%%
+[I,cmap] = dicomread([Path, 'frame60.dcm']);
+frameC2=I(y1:y2, :);
 frameC2 = double(frameC2) + 1;
 frameC2 = (frameC2 - min(min(frameC2))) /(max(max(frameC2)) - min(min(frameC2)));
+frameC2 = imadjust(frameC2);
+ 
+
 %% find the boundary of bowman layer on every column
+start_offset = 30;%start counting from the middle, instead of from the end to avoid 
+%noise on the boundary of the images
+bowman_to_nearby_ratio = 2;%ratio of bowman brightness to nearby surrounding
+close all
 frame_med = medfilt2(frameC2);
 frame_size = size(frame_med);
 bowman_depth = zeros(1, frame_size(1, 2));
@@ -43,7 +59,7 @@ while true
         if value_array(start_indice) > bowman_to_nearby_ratio * ...
                 mean(value_array(nearby_avg_left : nearby_avg_right))
             bowman_depth(1, i) = start_indice; %bowman brightness should 
-            %be greater than its sourrounding area times the multiplier
+            %be greater than its sourrounding area
             break
         else
             start_indice = start_indice - 1; %if we don't find the brightness
@@ -54,6 +70,10 @@ end
 
 
 end
+% plot(value_array)
+% xline(start_indice, "color", "red");
+% figure
+% imshow(frame_med,cmap)
 %% eliminate outlier
 x3 = 1:frame_size(1, 2);
 P3=polyfit(x3,bowman_depth(1, :), 2);
@@ -68,5 +88,10 @@ for clmn=1:frame_size(1, 2)
     end
 end
 
-
-end 
+isNZ=(~bowman_depth==0);           % addressing logical array of nonzero elements
+close all
+figure
+imshow(frame_med,cmap)
+hold on
+plot(flipud(bowman_depth(isNZ)))
+%plot(flipud(bowman_depth))
