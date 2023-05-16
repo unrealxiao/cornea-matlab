@@ -6,7 +6,7 @@ Path=[pwd,'/'];
 
 dcm_file = dir([Path, '*.DCM']);
 %%
-[I,cmap] = dicomread([Path, 'frame60.dcm']);
+[I,cmap] = dicomread([Path, 'frame160.dcm']);
 
 imshow(I,cmap) 
 
@@ -17,17 +17,17 @@ y1 = min(floor(p(3)), floor(p(4))); %ymin
 x2 = max(ceil(p(1)), ceil(p(2)));   %xmax
 y2 = max(ceil(p(3)), ceil(p(4)));   %ymax
 %%
-[I,cmap] = dicomread([Path, 'frame60.dcm']);
+[I,cmap] = dicomread([Path, 'frame250.dcm']);
 frameC2=I(y1:y2, :);
 frameC2 = double(frameC2) + 1;
 frameC2 = (frameC2 - min(min(frameC2))) /(max(max(frameC2)) - min(min(frameC2)));
 frameC2 = imadjust(frameC2);
- 
+imshow(frameC2, cmap)
 
 %% find the boundary of bowman layer on every column
-start_offset = 30;%start counting from the middle, instead of from the end to avoid 
+start_offset = 20;%start counting from the middle, instead of from the end to avoid 
 %noise on the boundary of the images
-bowman_to_nearby_ratio = 2;%ratio of bowman brightness to nearby surrounding
+bowman_to_nearby_ratio = 1.6;%ratio of bowman brightness to nearby surrounding
 close all
 frame_med = medfilt2(frameC2);
 frame_size = size(frame_med);
@@ -70,10 +70,10 @@ end
 
 
 end
-% plot(value_array)
-% xline(start_indice, "color", "red");
-% figure
-% imshow(frame_med,cmap)
+plot(value_array)
+xline(start_indice, "color", "red");
+figure
+imshow(frame_med,cmap)
 %% eliminate outlier
 x3 = 1:frame_size(1, 2);
 P3=polyfit(x3,bowman_depth(1, :), 2);
@@ -89,9 +89,10 @@ for clmn=1:frame_size(1, 2)
 end
 
 isNZ=(~bowman_depth==0);           % addressing logical array of nonzero elements
-close all
+
 figure
 imshow(frame_med,cmap)
 hold on
-plot(flipud(bowman_depth(isNZ)))
+smooth_curve = smoothdata(bowman_depth(isNZ), 'movmedian', 5);
+plot(flipud(smooth_curve), 'color', 'yellow')
 %plot(flipud(bowman_depth))

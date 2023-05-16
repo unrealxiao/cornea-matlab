@@ -1,27 +1,32 @@
 clear variables
 close all
 
-%% model the surface of cornea
+%% model the surface of cornea and flatten it
 %close all
-[delta_matrix, smooth_surf, surface_cornea, Path_flat_save, Path_cross_flat, Path_cross_unflat, number_of_frames, original_scan, crop_scan, flip, Cl] = cornea_delta(0.3, "n");
+[delta_matrix, smooth_surf, surface_cornea, Path_flat_save, Path_cross_flat, Path_cross_unflat, number_of_frames, original_scan, crop_scan, flip, Cl, cmap] = cornea_delta(0.16, "Y");
 %delta matrix return the distance between peak of the surface and each
 %individual point
 %(:, :, 1) of original_scan corresponds to first frame
 %original_scan preserve the rows that were croped, while crop_scan deleted
 %the row that were not interested. the reduced size in crop_scan help speed
 %up the cross-corelation correction
-
+% %% check the image
 surf(surface_cornea, 'FaceColor','g', 'FaceAlpha',0.5, 'EdgeColor','none');
 
 figure;
 
 surf(smooth_surf, 'FaceColor','r', 'FaceAlpha',0.5, 'EdgeColor','none')
-
-disp('delta matrix complete')
-%% if you want to flatten the data first, then use this code below
+% 
+% disp('delta matrix complete')
+% %% check the contrast at certain depth
+% depth_frame = original_scan(192, :, :);
+% depth_frame = squeeze(depth_frame);
+% imshow(depth_frame, cmap)
+% contrast = max(depth_frame, [], 'all') - min(depth_frame, [], 'all')
+% if you want to flatten the data first, then use this code below
 
 [flatten_original] = cornea_flatten(original_scan, delta_matrix, flip, Cl);%the flattened stack with row preserved
-[flatten_crop] = cornea_flatten(crop_scan, delta_matrix, flip, Cl);%the flattened stack with row croped
+%[flatten_crop] = cornea_flatten(crop_scan, delta_matrix, flip, Cl);%the flattened stack with row croped
 %use flatten_crop to do cross-correlation
 
 %save flattened stack 
@@ -43,6 +48,11 @@ parfor i = 1 : number_of_frames
 end
 
 disp('flattening complete')
+%% let's see if substracting the top layer from the tissue layer will work
+
+top_layer = squeeze(flatten_original(354, :, :));
+tissue_layer = squeeze(flatten_original(366, :, :));
+processed_layer = tissue_layer - top_layer;
 %% we will then proceed to correct cross-correlation in the images and save the corrected frame
 
 %we first correct the shift on the flattened images

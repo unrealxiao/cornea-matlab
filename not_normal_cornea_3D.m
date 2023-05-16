@@ -1,4 +1,5 @@
-clear 
+%clearvars -except y1 y2
+clear variables
 close all
 %% test cornea_layer
 %% crop images, decide the folder of images
@@ -7,33 +8,41 @@ Path=[pwd,'/'];
 dcm_file = dir([Path, '*.DCM']);
 num_frames = length(dcm_file);
 [I,cmap] = dicomread([Path, name]);
-
 size_I = size(I);
 
 imshow(I,cmap) 
-lower_sd = 1.5;
-upper_sd = 2;
-row_frac = 4/6;
+
 p = ginput(2);  % have user crop image by selecting 2 coordinate points 
 p(p<1)=1;
-% x1 = min(floor(p(1)), floor(p(2))); %xmin
+x1 = min(floor(p(1)), floor(p(2))); %xmin
 y1 = min(floor(p(3)), floor(p(4))); %ymin
-% x2 = max(ceil(p(1)), ceil(p(2)));   %xmax
+x2 = max(ceil(p(1)), ceil(p(2)));   %xmax
 y2 = max(ceil(p(3)), ceil(p(4)));   %ymax
 frameC2=I(y1:y2, :); 
 figure
 imshow(frameC2,cmap)
 % num1 = 1;
 % [miceye1, lower2, midd2, upper2] = cornea_layer(path, num1, 5, 3, 5);
- Bowman_3D = zeros(num_frames, size_I(1, 2));
+Bowman_3D = zeros(num_frames, size_I(1, 2));
 %% lower_3D aquire
-start_offset = 30;%start counting from the middle, instead of from the end to avoid 
+start_offset = 20;%start counting from the middle, instead of from the end to avoid 
 %noise on the boundary of the images
-bowman_ratio = 2;
+bowman_ratio = 1.4;
+b_column = size_I(1, 2);
+middle_i = round(num_frames / 2);
+%middle_i = 175;
+middle_k = round(b_column / 2 );
+d_radius = 150;
 parfor i = 1:num_frames
     [bowman_depth] = cornea_layer_notnormal(Path, i, y1, y2, start_offset, bowman_ratio);
+    for k = 1 : b_column
+        if (i - middle_i)^2 + (k - middle_k)^2 > d_radius^2
+           bowman_depth(1, k) = NaN;
+        end
+    end
     Bowman_3D(i, :) = bowman_depth;
 end
+
 %% only run this part once
 [upper_row, upper_column, upper_v] = find(Bowman_3D);%extract all nonzero value and their indices in the matrix
 %% flip the data(only run this once)
@@ -72,10 +81,13 @@ surf(smooth_upper * 0.7,'FaceColor','b', 'FaceAlpha',0.5, 'EdgeColor','none')
 
 %zlim([200, 200])
 %% plot the depth
-
- imagesc(smooth_upper * 0.7);title('epi');
+ savefolder = '\\iu-opt-research\TankamLab\PPTs of RESULTS and PRESENTATIONS\POCM\Human Imaging\bowman depth plot\bowman.png';
+ imagesc(smooth_upper * 0.7);title('bowman');
+ colorbar;
+ ax = gca;
+ ax.FontWeight = 'bold';
  caxis([0 150]);
-
+ saveas(ax, savefolder);
 %%
 real_epi_stroma = smooth_upper * 0.7;
 

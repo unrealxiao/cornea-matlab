@@ -1,4 +1,4 @@
-function [delta_matrix, smooth_surf, smooth_poly, Path_save_flat, Path_save_cross_flat, Path_save_cross_unflat, numframes, original_stack, crop_stack, flip, Cl] = cornea_delta(thres_hold, flip)
+function [delta_matrix, smooth_surf, smooth_poly, Path_save_flat, Path_save_cross_flat, Path_save_cross_unflat, numframes, original_stack, crop_stack, flip, Cl, cmap] = cornea_delta(thres_hold, flip)
 %if you want to flip the images(so that endothelium will be on top), enter
 %flip as "Y"
 Path=[pwd,'/'];
@@ -188,7 +188,7 @@ surface_cornea = griddata(cornea_row, cornea_column, cornea_v, xq, yq);
 
 %surf(surface_cornea, 'FaceColor','g', 'FaceAlpha',0.5, 'EdgeColor','none');
 
-smooth_surf = smooth2a(surface_cornea, 5, 5); %yy4 surface reconstruction  
+smooth_surf = smooth2a(surface_cornea, 2, 2); %yy4 surface reconstruction  
 smooth_poly = smooth2a(polysf, 15, 15);
 %figure;
 
