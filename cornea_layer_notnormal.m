@@ -44,6 +44,8 @@ while true
                 mean(value_array(nearby_avg_left : nearby_avg_right))
             bowman_depth(1, i) = start_indice; %bowman brightness should 
             %be greater than its sourrounding area times the multiplier
+            %leaving the gap between the start_indice and nearby interval
+            %help reliably detect the peak
             break
         else
             start_indice = start_indice - 1; %if we don't find the brightness
