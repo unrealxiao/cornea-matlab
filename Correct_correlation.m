@@ -3,7 +3,7 @@ close all
 
 %% model the surface of cornea and flatten it
 %close all
-[delta_matrix, smooth_surf, surface_cornea, Path_flat_save, Path_cross_flat, Path_cross_unflat, number_of_frames, original_scan, crop_scan, flip, Cl, cmap] = cornea_delta(0.16, "Y");
+[delta_matrix, smooth_surf, surface_cornea, Path_flat_save, Path_cross_flat, Path_cross_unflat, number_of_frames, original_scan, crop_scan, flip, Cl, cmap] = cornea_delta(1.7, "n");
 %delta matrix return the distance between peak of the surface and each
 %individual point
 %(:, :, 1) of original_scan corresponds to first frame

@@ -1,12 +1,12 @@
-function [delta_matrix, smooth_surf, smooth_poly, Path_save_flat, Path_save_cross_flat, Path_save_cross_unflat, numframes, original_stack, crop_stack, flip, Cl, cmap] = cornea_delta(thres_hold, flip)
+function [delta_matrix, smooth_surf, smooth_poly, Path_save_flat, Path_save_cross_flat, Path_save_cross_unflat, numframes, original_stack, crop_stack, flip, Cl, cmap] = cornea_delta(bowman_to_nearby_ratio, flip)
 %if you want to flip the images(so that endothelium will be on top), enter
 %flip as "Y"
 Path=[pwd,'/'];
-[name,Path]=uigetfile([Path,'*.DCM'],' Choose a reference image in the format DCM. '); 
+[~,Path]=uigetfile([Path,'*.DCM'],' Choose a reference image in the format DCM. '); 
 %Ext=name(end-3:end);
 mkdir(Path,'Flat'); % Create a subfolder in the directeory
-mkdir(Path, 'cross_flat');
-mkdir(Path, 'cross_unflat')
+%mkdir(Path, 'cross_flat');
+%mkdir(Path, 'cross_unflat')
 Path_save_flat=[Path,'Flat\'];
 Path_save_cross_flat = [Path, 'cross_flat\'];
 Path_save_cross_unflat = [Path, 'cross_unflat\'];
@@ -16,10 +16,10 @@ dcm_file = dir([Path, '*.DCM']);
 numframes = length(dcm_file); % number of input frames
 
 num=1; %initial frame number 
-deg=3; %degree of the polynomial fit
-deg2=2;
-threshold=thres_hold; % for the peak detection 
-name=[Path,name];
+%deg=3; %degree of the polynomial fit
+%deg2=2;
+%threshold=thres_hold; % for the peak detection 
+name=[Path,append('frame', num2str(round(numframes/2)), '.DCM')];
 [I,cmap] = dicomread(name);  % find out size of images by importing one
 if (flip == "Y")
    I = flipud(I); 
@@ -39,12 +39,13 @@ size_of_frame = size(frame);
 imshow(frame,cmap) 
 p = ginput(2);  % have user crop image by selecting 2 coordinate points 
 p(p<1)=1;
-x1 = min(floor(p(1)), floor(p(2))); %xmin
+%x1 = min(floor(p(1)), floor(p(2))); %xmin
 y1 = min(floor(p(3)), floor(p(4))); %ymin
-x2 = max(ceil(p(1)), ceil(p(2)));   %xmax
+%x2 = max(ceil(p(1)), ceil(p(2)));   %xmax
 y2 = max(ceil(p(3)), ceil(p(4)));   %ymax
 
-frameC2=frame(y1:y2, x1:x2); 
+%frameC2=frame(y1:y2, x1:x2);
+frameC2=frame(y1:y2, :);
 imshow(frameC2,cmap) %frameC = cropped frame 
 
 size_of_crop = size(frameC2);
@@ -84,8 +85,11 @@ parfor i = 1:numframes
        frame=flipud(frame); 
     end
     %frame=flipud(frame);
-    frameC = frame(y1:y2, x1:x2); % crop frames
-    frameD = frame(:, x1:x2) %preserve the data on the row
+    
+    %frameC = frame(y1:y2, x1:x2); % crop frames
+    frameC = frame(y1:y2, :);
+    %frameD = frame(:, x1:x2) %preserve the data on the row
+    frameD = frame;
     %Normalizing 
 
     frameC64 = double(frameC) + 1; %to convert from 16 to double 
@@ -113,68 +117,57 @@ parfor i = 1:numframes
 
     frameN = (frameC64 - min(min(frameC64))) /(max(max(frameC64)) - min(min(frameC64)));
     
-    %FrameN=medfilt2(frameN,[3 3]); %Applying 2D median filter% 
-    %figure
-    %imshow(frameN) 
-
-    %%Peak Detection 
-
-    %ypixels = 1:H; % # of y-pixels = # of rows
-    %frameR = zeros(H,L);
-
-    frameR2= zeros(S);
-    %xx2=1:L; 
-    yy2=1:H;
-
-    for clmn = 1:L 
+    frameN=medfilt2(frameN,[3 3]); %Applying 2D median filter% 
+    frame_size = size(frameN);
+    bowman_depth = zeros(1, frame_size(1, 2));
+    start = 21;%this is where to start detect bowman
+    %i = 6;
     
-        scan=frameN(:,clmn);
-        scan=smooth(scan);                     
-        [maxtab, ~]=peakdet(scan,threshold,yy2); 
-   
-        if (isempty(maxtab)==1) %Puts 1 if there is(are) any peak(s) detected
-         [~,pos]=max(scan);  
-         frameR2(pos,clmn)=1; 
+    for k = 1:frame_size(1, 2) 
+    row_array = frameN(:, k);
+    value_array = smoothdata(row_array, "gaussian", 10);
+    start_indice = start;
+    
+    while true
+        nearby_avg_right = start_indice - 10;
+        nearby_avg_left = start_indice - 20;
+        if start_indice > frame_size(1, 1)
+            break %if reach the start of image array, then stop
         else
-        frameR2(maxtab(1,1),clmn)=1;
+            if value_array(start_indice) > bowman_to_nearby_ratio * ...
+                    mean(value_array(nearby_avg_left : nearby_avg_right))
+                bowman_depth(1, k) = start_indice; %bowman brightness should 
+                %be greater than its sourrounding area times the multiplier
+                %leaving the gap between the start_indice and nearby interval
+                %help reliably detect the peak
+                break
+            else
+                start_indice = start_indice + 1; %if we don't find the brightness
+                %then keep moving
+            end    
         end
+    end
+    
     
     end
 
-%     figure
-%     imshow(frameR2) 
-    [y3, x3]=find(frameR2==1); %will be top surface of the lens
-    P3=polyfit(x3,y3,deg);
-    yy3=polyval(P3, x3);
-%     hold on; plot(x3,yy3,'b','LineWidth',1); hold on;
-%     figure
-%     imshow(frameN); hold on; plot(xx2,yy3,'r','LineWidth',1);
 
-%% Refine the polynomial fit by removing bad peaks
-
-    delta=yy3-y3; %computes the distance between the polynomial and the peaks
+%% eliminate outlier
+    x3 = 1:frame_size(1, 2);
+    x3 = x3';
+    P3=fit(x3,bowman_depth(1, :)', 'poly2', 'Exclude', 0);
+    yy3=P3(x3);
+    
+    delta=yy3-bowman_depth(1, :)'; %computes the distance between the polynomial and the peaks
     STD_delta=std(delta);
-    frameR22=frameR2;
-    
-    for clmn=1:L
-        if (abs(delta(clmn))>STD_delta*0.9)
-            frameR22(:,clmn)=0;
+    avg_bowman = mean(bowman_depth);
+    for clmn=1:frame_size(1, 2)
+        if (abs(delta(clmn))>STD_delta * 0.7)
+            bowman_depth(1,clmn)=avg_bowman;%eliminate outllier by replacing it with avg value
         end
     end
 
-
-    [y4, x4]=find(frameR22==1); %will be top surface of the lens
-    cord_arry = zeros(1, L);
-    for in = 1:length(x4)
-       cord_arry(x4(in)) = y4(in); %add coordinate of the peak into the cord_arry
-    end
-
-%     [y4, x4]=find(frameR22==1); %will be top surface of the lens
-%     P3=polyfit(x4,y4,deg);
-%     yy4=polyval(P3, xx2);
-
-    polysf(i,:)=cord_arry;%cord_arry contains the coordinate of the cornea surface, 0 are placed if no coordinates found
-%     polysf(i,:)=yy4;
+    polysf(i,:)=bowman_depth;%cord_arry contains the coordinate of the cornea surface, 0 are placed if no coordinates found
 end
 
 %% eliminate the 0 in polysf and make the surface of cornea
@@ -197,14 +190,17 @@ smooth_poly = smooth2a(polysf, 15, 15);
 %% transpose matrix
 %surface_cornea = surface_cornea';
 smooth_surf = smooth_surf';
+%% introduce randomness in the smooth_surf to deal with artifact
+%normal_random = normrnd(0, 2, size(smooth_surf));
+random_smooth_surf = smooth_surf;
 %% flatten the surface
 center_point = [round(poly_size(1, 1)/2), round(poly_size(1, 2)/2)];
-center_surface = smooth_surf((center_point(1) - 200) : (center_point(1) + 200), (center_point(2) - 150) : (center_point(2) + 150));
+center_surface = random_smooth_surf((center_point(1) - 200) : (center_point(1) + 200), (center_point(2) - 150) : (center_point(2) + 150));
 %center_surface = center_surface;
 %before find the minimum value, eliminate the edge where artifacts ususally
 %occurs
 peak_point = floor(min(min(center_surface)));% the level that the surface will be flattened to 
-delta = round(smooth_surf - peak_point);%obtain the difference
+delta = round(random_smooth_surf - peak_point);%obtain the difference
 delta_matrix = fillmissing(delta,'nearest');%replace possible NaN value in d
 
 end
