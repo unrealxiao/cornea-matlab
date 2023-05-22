@@ -1,6 +1,13 @@
-function [delta_matrix, smooth_surf, smooth_poly, Path_save_flat, Path_save_cross_flat, Path_save_cross_unflat, numframes, original_stack, crop_stack, flip, Cl, cmap] = cornea_delta(bowman_to_nearby_ratio, flip)
+function [delta_matrix, smooth_surf, smooth_poly, Path_save_flat, Path_save_cross_flat, Path_save_cross_unflat, numframes, original_stack, crop_stack, flip, Cl, cmap] = cornea_delta(start_offset, top_ratio, low_ratio, flip)
 %if you want to flip the images(so that endothelium will be on top), enter
 %flip as "Y"
+%top_ratio represents the top percents of the column array, lower_ratio
+%represents the low percents of the column array. use to find the peak
+%start offset use to determine the gap between the peak point and the
+%array we are going to average. This is used to make sure that the array is
+%not on the hill that leads to the peak. without this value the peak won't
+%be significanly higher than the average, which leads to the failure of
+%identifying the peak.
 Path=[pwd,'/'];
 [~,Path]=uigetfile([Path,'*.DCM'],' Choose a reference image in the format DCM. '); 
 %Ext=name(end-3:end);
@@ -51,7 +58,7 @@ imshow(frameC2,cmap) %frameC = cropped frame
 size_of_crop = size(frameC2);
 
 S=size(frameC2);
-H=S(1,1); %height of figure (rows) 
+%H=S(1,1); %height of figure (rows) 
 L=S(1,2); %lenght of figure (columns) 
 
 %%
@@ -120,22 +127,28 @@ parfor i = 1:numframes
     frameN=medfilt2(frameN,[3 3]); %Applying 2D median filter% 
     frame_size = size(frameN);
     bowman_depth = zeros(1, frame_size(1, 2));
-    start = 21;%this is where to start detect bowman
+    %start = 15;%this is where to start detect bowman
     %i = 6;
     
     for k = 1:frame_size(1, 2) 
     row_array = frameN(:, k);
     value_array = smoothdata(row_array, "gaussian", 10);
-    start_indice = start;
-    
+    start_indice = start_offset + 5;
+    top10_num = round(frame_size(1, 1) * top_ratio);%the size of top_ratio of row_array
+    top10_max = maxk(row_array, top10_num);%store the top 10% number 
+    avg_top10 = mean(top10_max);%mean of the average top 10%
+    low40_num = round(frame_size(1, 1) * low_ratio);%the size of low_ratio of row_array
+    low40_min = mink(row_array, low40_num);%store the low 40% number 
+    avg_low40 = mean(low40_min);
+    top2low_ratio = avg_top10 / avg_low40;
     while true
-        nearby_avg_right = start_indice - 10;
-        nearby_avg_left = start_indice - 20;
+        nearby_avg_right = start_indice - start_offset;
+        %nearby_avg_left = start_indice - 20;
         if start_indice > frame_size(1, 1)
             break %if reach the start of image array, then stop
         else
-            if value_array(start_indice) > bowman_to_nearby_ratio * ...
-                    mean(value_array(nearby_avg_left : nearby_avg_right))
+            if value_array(start_indice) > top2low_ratio * ...
+                    mean(value_array(1 : nearby_avg_right))
                 bowman_depth(1, k) = start_indice; %bowman brightness should 
                 %be greater than its sourrounding area times the multiplier
                 %leaving the gap between the start_indice and nearby interval
@@ -153,21 +166,25 @@ parfor i = 1:numframes
 
 
 %% eliminate outlier
-    x3 = 1:frame_size(1, 2);
-    x3 = x3';
-    P3=fit(x3,bowman_depth(1, :)', 'poly2', 'Exclude', 0);
-    yy3=P3(x3);
+    isNZ=(~bowman_depth==0);           % addressing logical array of nonzero elements
     
-    delta=yy3-bowman_depth(1, :)'; %computes the distance between the polynomial and the peaks
-    STD_delta=std(delta);
-    avg_bowman = mean(bowman_depth);
+    
+    smooth_bowman = smoothdata(bowman_depth(isNZ), 'movmedian', 5);
+    
+    x3 = 1:frame_size(1, 2);
+    P3=polyfit(x3(isNZ),smooth_bowman(1, :), 2);
+    yy3_partial=polyval(P3, x3(isNZ));
+    yy3_complete = polyval(P3, x3);
+    
+    delta=yy3_complete-bowman_depth(1, :); %computes the distance between the polynomial and the peaks
+    STD_delta=std(yy3_partial - smooth_bowman);
+    %avg_bowman = mean(smooth_bowman);
     for clmn=1:frame_size(1, 2)
         if (abs(delta(clmn))>STD_delta * 0.7)
-            bowman_depth(1,clmn)=avg_bowman;%eliminate outllier by replacing it with avg value
+            bowman_depth(1,clmn)=yy3_complete(1, clmn);%eliminate outllier by replacing it with avg value
         end
     end
-
-    polysf(i,:)=bowman_depth;%cord_arry contains the coordinate of the cornea surface, 0 are placed if no coordinates found
+    polysf(i, :) = bowman_depth;
 end
 
 %% eliminate the 0 in polysf and make the surface of cornea

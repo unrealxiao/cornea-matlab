@@ -11,7 +11,8 @@ numframes = 1000; % number of input frames
 num=1; %initial frame number  %degree of the polynomial fit
 deg2=2;
 threshold=.25; % for the peak detection 
-name=[Path,'frame200.DCM'];
+%%
+name=[Path,'frame480.DCM'];
 [I,cmap] = dicomread(name);  % find out size of images by importing one
 %I=flipud(I);
 Cl=class(I);
@@ -92,21 +93,27 @@ frameN = (frameC64 - min(min(frameC64))) /(max(max(frameC64)) - min(min(frameC64
 frameN=medfilt2(frameN); %Applying 2D median filter% 
 frame_size = size(frameN);
 bowman_depth = zeros(1, frame_size(1, 2));
-start = 21;%this is where to start detect bowman
+start = 30;%this is where to start detect bowman
 %i = 6;
-bowman_to_nearby_ratio = 2.5;
+bowman_to_nearby_ratio = 2.0;
 for k = 1:frame_size(1, 2) 
 row_array = frameN(:, k);
 value_array = smoothdata(row_array, "gaussian", 10);
 start_indice = start;
-
+top10_num = round(frame_size(1, 1) * 0.1);%the size of 0.1 of row_array
+top10_max = maxk(row_array, top10_num);%store the top 10% number 
+avg_top10 = mean(top10_max);%mean of the average top 10%
+low40_num = round(frame_size(1, 1) * 0.6);%the size of 0.4 of row_array
+low40_min = mink(row_array, low40_num);%store the low 40% number 
+avg_low40 = mean(low40_min);
+top2low_ratio = avg_top10 / avg_low40;
 while true
-    nearby_avg_right = start_indice - 10;
+    nearby_avg_right = start_indice - 25;
     %nearby_avg_left = start_indice - 20;
     if start_indice > frame_size(1, 1)
         break %if reach the start of image array, then stop
     else
-        if value_array(start_indice) > bowman_to_nearby_ratio * ...
+        if value_array(start_indice) > top2low_ratio * ...
                 mean(value_array(1 : nearby_avg_right))
             bowman_depth(1, k) = start_indice; %bowman brightness should 
             %be greater than its sourrounding area times the multiplier
@@ -146,14 +153,15 @@ for clmn=1:frame_size(1, 2)
     end
 end
 
+%%
 figure
 imshow(frameN,cmap)
 hold on
 plot(flipud(bowman_depth), 'color', 'yellow')
 figure 
-plot(frameN(:, 40));
+plot(frameN(:, 60));
 hold on
-xline(bowman_depth(1, 40));
+xline(bowman_depth(1, 60));
 %% Refine the polynomial fit from cornea_flattening_part 3 upside down
 
 % delta=yy3-y3; %computes the distance between the polynomial and the peaks
