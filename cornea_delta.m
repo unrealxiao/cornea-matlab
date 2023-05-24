@@ -4,10 +4,10 @@ function [delta_matrix, smooth_surf, smooth_poly, Path_save_flat, Path_save_cros
 Path=[pwd,'/'];
 [name,Path]=uigetfile([Path,'*.DCM'],' Choose a reference image in the format DCM. '); 
 %Ext=name(end-3:end);
-mkdir(Path,'Flat'); % Create a subfolder in the directeory
+mkdir(Path,'peakdet_Flat'); % Create a subfolder in the directeory
 mkdir(Path, 'cross_flat');
 mkdir(Path, 'cross_unflat')
-Path_save_flat=[Path,'Flat\'];
+Path_save_flat=[Path,'peakdet_Flat\'];
 Path_save_cross_flat = [Path, 'cross_flat\'];
 Path_save_cross_unflat = [Path, 'cross_unflat\'];
 %count the number of files in the directories
