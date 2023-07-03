@@ -8,6 +8,9 @@ function [delta_matrix, smooth_surf, smooth_poly, Path_save_flat, Path_save_cros
 %not on the hill that leads to the peak. without this value the peak won't
 %be significanly higher than the average, which leads to the failure of
 %identifying the peak.
+
+%smooth_surf are the surface of the cornea, row 1 represents the segment of
+%frame1, row2 to frame2, and so on
 Path=[pwd,'/'];
 [~,Path]=uigetfile([Path,'*.DCM'],' Choose a reference image in the format DCM. '); 
 %Ext=name(end-3:end);
@@ -210,14 +213,23 @@ smooth_surf = smooth_surf';
 %% introduce randomness in the smooth_surf to deal with artifact
 %normal_random = normrnd(0, 2, size(smooth_surf));
 random_smooth_surf = smooth_surf;
-%% flatten the surface
-center_point = [round(poly_size(1, 1)/2), round(poly_size(1, 2)/2)];
-center_surface = random_smooth_surf((center_point(1) - 200) : (center_point(1) + 200), (center_point(2) - 150) : (center_point(2) + 150));
-%center_surface = center_surface;
-%before find the minimum value, eliminate the edge where artifacts ususally
-%occurs
-peak_point = floor(min(min(center_surface)));% the level that the surface will be flattened to 
-delta = round(random_smooth_surf - peak_point);%obtain the difference
-delta_matrix = fillmissing(delta,'nearest');%replace possible NaN value in d
+%% flatten the surface(based on the minimal point of the surface)
+% center_point = [round(poly_size(1, 1)/2), round(poly_size(1, 2)/2)];
+% center_surface = random_smooth_surf((center_point(1) - 200) : (center_point(1) + 200), (center_point(2) - 150) : (center_point(2) + 150));
+% %center_surface = center_surface;
+% %before find the minimum value, eliminate the edge where artifacts ususally
+% %occurs
+% peak_point = floor(min(min(center_surface)));% the level that the surface will be flattened to 
+% delta = round(random_smooth_surf - peak_point);%obtain the difference
+% delta_matrix = fillmissing(delta,'nearest');%replace possible NaN value in d
+%% flatten the surface(manually choose the point that are relatively smooth)
 
+column_num = round(size_of_crop(2)/2);
+depth_frame = original_stack(:, column_num, :);
+depth_frame = squeeze(depth_frame);
+imshow(depth_frame, cmap);
+[~, x_cor] = ginput(1);%frame number of the selected point
+peak_point = random_smooth_surf(round(x_cor), column_num);% point of relative smooth surface
+delta = round(random_smooth_surf - peak_point);
+delta_matrix = fillmissing(delta, "nearest");
 end

@@ -19,9 +19,10 @@ surf(smooth_surf, 'FaceColor','r', 'FaceAlpha',0.5, 'EdgeColor','none')
 % 
 % disp('delta matrix complete')
 % %% check the contrast at certain depth
-% depth_frame = original_scan(192, :, :);
+% depth_frame = original_scan(:, 192, :);
 % depth_frame = squeeze(depth_frame);
 % imshow(depth_frame, cmap)
+% [x, ~] = ginput(1);
 % contrast = max(depth_frame, [], 'all') - min(depth_frame, [], 'all')
 % if you want to flatten the data first, then use this code below
 
