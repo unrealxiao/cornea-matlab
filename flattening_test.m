@@ -3,17 +3,17 @@ close all
 % Open a reference image from the stack, indetify the directory and create
 % a new directory called 'Flat_ENDO' to store the results of the flattening
 Path=[pwd,'/'];
-[name,Path]=uigetfile([Path,'*.tif'],' Choose a reference image in the format DCM. '); 
+[name,Path]=uigetfile([Path,'*.DCM'],' Choose a reference image in the format DCM. '); 
 Ext=name(end-3:end);
-mkdir(Path,'Flat_ENDO_part2'); % Create a subfolder in the directeory
-Path_save=[Path,'Flat_ENDO_part2\'];
+% mkdir(Path,'Flat_ENDO_part2'); % Create a subfolder in the directeory
+% Path_save=[Path,'Flat_ENDO_part2\'];
 numframes = 1000; % number of input frames
 num=1; %initial frame number  %degree of the polynomial fit
 deg2=2;
-threshold=.25; % for the peak detection 
-name=[Path,name];
-[I,cmap] = imread(name);  % find out size of images by importing one
-I=flipud(I);
+threshold=.3; % for the peak detection 
+name=[Path,'frame250.DCM'];
+[I,cmap] = dicomread(name);  % find out size of images by importing one
+%I=flipud(I);
 Cl=class(I);
 tic
 
@@ -169,29 +169,29 @@ name_5= 'frame';
     
  %%  flatten one frame only
     
-    F = frame(:,x1:x2); %delete the extra column
-    %[F, cmap] = imread(name);
-    %F = F(:, x1:x2);
-    F64 = double(F) +1 ; %convert to double
-    F64 = flipud(F64);%flip the images
-    %F64 = imgaussfilt(F64, 0.8);
-    S2F=size(F);
-    H2F=S2F(1,1);
-    L2F=S2F(1,2);
-    frameShtwo=zeros(size(F64)); 
-    
-    %moving pixel on F64
-    delta_matrix = round(max(yy4) - yy4);
-    k = 1;
-    for col = 1:L
-        if delta_matrix(k, col) > 0
-            frameShtwo(1:(H2F - delta_matrix(k, col)), col) = F64((delta_matrix(k, col) + 1):H2F, col);
-            frameShtwo((H2F - delta_matrix(k, col) + 1):H2F, col) = F64(1:delta_matrix(k, col), col);
-        else
-            positive_delta = abs(delta_matrix(k, col));
-            frameShtwo(1:positive_delta, col) = F64((H2F - positive_delta + 1):H2F, col);
-            frameShtwo((positive_delta + 1):H2F, col) = F64(1:(H2F - positive_delta), col);
-        end 
-    end
-    %frameShtwo = flipud(frameShtwo);
-    
+    % F = frame(:,x1:x2); %delete the extra column
+    % %[F, cmap] = imread(name);
+    % %F = F(:, x1:x2);
+    % F64 = double(F) +1 ; %convert to double
+    % F64 = flipud(F64);%flip the images
+    % %F64 = imgaussfilt(F64, 0.8);
+    % S2F=size(F);
+    % H2F=S2F(1,1);
+    % L2F=S2F(1,2);
+    % frameShtwo=zeros(size(F64)); 
+    % 
+    % %moving pixel on F64
+    % delta_matrix = round(max(yy4) - yy4);
+    % k = 1;
+    % for col = 1:L
+    %     if delta_matrix(k, col) > 0
+    %         frameShtwo(1:(H2F - delta_matrix(k, col)), col) = F64((delta_matrix(k, col) + 1):H2F, col);
+    %         frameShtwo((H2F - delta_matrix(k, col) + 1):H2F, col) = F64(1:delta_matrix(k, col), col);
+    %     else
+    %         positive_delta = abs(delta_matrix(k, col));
+    %         frameShtwo(1:positive_delta, col) = F64((H2F - positive_delta + 1):H2F, col);
+    %         frameShtwo((positive_delta + 1):H2F, col) = F64(1:(H2F - positive_delta), col);
+    %     end 
+    % end
+    % %frameShtwo = flipud(frameShtwo);
+    % 

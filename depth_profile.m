@@ -1,24 +1,126 @@
-address_a = 'G:\OCT_POCM_data\Glass-for-double-peak-gaps-measure\glass-R45\pic\';
-name_1 = 'frame';
-name_2 = 250;
-name_3 = '.DCM';
-[image1, cmap1] = dicomread([address_a, strcat(name_1, num2str(name_2 - 2), name_3)]);
-[image2, cmap2] = dicomread([address_a, strcat(name_1, num2str(name_2 - 1), name_3)]);
-[image3, cmap3] = dicomread([address_a, strcat(name_1, num2str(name_2), name_3)]);
-[image4, cmap4] = dicomread([address_a, strcat(name_1, num2str(name_2 + 1), name_3)]);
-[image5, cmap5] = dicomread([address_a, strcat(name_1, num2str(name_2 + 2), name_3)]);
+clear variables;
+close all;
+address_a = 'E:\3Dimage\POCM_System\Calibration\depth\';
+name_1 = '0degree';
+name_2 = '45degree';
+name_3 = '225degree';
+fileID = fopen([address_a, name_1], 'r');
+fileID2 = fopen([address_a, name_2], 'r');
+fileID3 = fopen([address_a, name_3], 'r');
+formatSpec = '%f';
+A = fscanf(fileID, formatSpec);
+B = fscanf(fileID2, formatSpec);
+C = fscanf(fileID3, formatSpec);
+A = A(1:11:end);
+B = B(1:11:end);
+C = C(1:11:end);
+x_scale = (1:length(A)/2) * 0.00096966;% scaling factor in air
+% [image1, cmap1] = imread([address_a, strcat(name_1, num2str(name_2), name_3)]);
+% [image2, cmap2] = dicomread([address_a, strcat(name_1, num2str(name_2 - 1), name_3)]);
+% [image3, cmap3] = dicomread([address_a, strcat(name_1, num2str(name_2), name_3)]);
+% [image4, cmap4] = dicomread([address_a, strcat(name_1, num2str(name_2 + 1), name_3)]);
+% [image5, cmap5] = dicomread([address_a, strcat(name_1, num2str(name_2 + 2), name_3)]);
 
-Avg_img = (image1 + image2 + image3 + image4 + image5) / 5;
-[row, col] = size(Avg_img);
-%figure;
-plot(Avg_img(:, round(col/2)))
-ylim([0 250])
-hold on
 %% plot image and its depth map
+savefolder = '\\iu-opt-research\TankamLab\PPTs of RESULTS and PRESENTATIONS\POCM\Calibration\cross-correlation-images';
+
+close all
 figure;
-imshow(Avg_img, cmap1);
+plot(x_scale, A(2049:end), "blue")
+title('0 degree')
+xlabel('Depth(mm)', 'fontweight','bold')
+ylabel('Intensity(a.u)', 'fontweight','bold')
+ylim([0 10]);
+ax = gca;
+ax.FontWeight = 'bold';
+saveas(gcf, [savefolder, '\0degree.png'])
+
+figure;
+plot(x_scale, B(2049:end),  "green")
+title('45 degree')
+xlabel('Depth(mm)', 'fontweight','bold')
+ylabel('Intensity(a.u)', 'fontweight','bold')
+ax = gca;
+ax.FontWeight = 'bold';
+ylim([0 2.5]);
+xlim([0.5 0.58]);
+saveas(gcf, [savefolder, '\45degree.png'])
+
+figure;
+plot(x_scale, C(2049:end),  "red")
+title('22.5 degree')
+xlabel('Depth(mm)', 'fontweight','bold')
+ylabel('Intensity(a.u)', 'fontweight','bold')
+ax = gca;
+ax.FontWeight = 'bold';
+ylim([0 10]);
+saveas(gcf, [savefolder, '\225degree.png'])
+%contrast = max(Avg_img, [], 'all') - min(Avg_img, [], 'all');
+
+%% zoom
+close all
+figure;
+plot(x_scale, A(2049:end), "blue")
+hold on
+plot(x_scale, B(2049:end),  "green")
+hold on
+plot(x_scale, C(2049:end),  "red")
+xlabel('Depth(mm)', 'fontweight','bold')
+ylabel('Intensity(a.u)', 'fontweight','bold')
+ax = gca;
+ax.FontWeight = 'bold';
+ylim([0 2.5]);
+
+xlim([0.5 0.58]);
+%xlim([0.16 0.36])
+%% plot spectrum 
+clear variables;
+close all;
+address_a = 'E:\3Dimage\POCM_System\Calibration\depth\';
+savefolder = '\\iu-opt-research\TankamLab\PPTs of RESULTS and PRESENTATIONS\POCM\Calibration\cross-correlation-images';
+name_1 = '0degree(1)';
+name_2 = '45degree (1)';
+name_3 = '225degree (1)';
+fileID = fopen([address_a, name_1]);
+fileID2 = fopen([address_a, name_2]);
+fileID3 = fopen([address_a, name_3]);
+formatSpec = '%f';
+A = fscanf(fileID, formatSpec);
+B = fscanf(fileID2, formatSpec);
+C = fscanf(fileID3, formatSpec);
+endpoint = round(length(A) / 11);
+x_value = linspace(750, 930, 2048);
 
 
+figure;
+plot(x_value, flipud(A(1:endpoint)), "blue")
+title('0 degree')
+xlabel('Wavelength(nm)', 'fontweight','bold')
+ylabel('Amplitude', 'fontweight','bold')
+ylim([0 400]);
+ax = gca;
+ax.FontWeight = 'bold';
+saveas(gcf, [savefolder, '\0degreespectrum.png'])
+
+figure;
+plot(x_value, flipud(B(1:endpoint)), "green")
+title('45 degree')
+xlabel('Wavelength(nm)', 'fontweight','bold')
+ylabel('Amplitude', 'fontweight','bold')
+ylim([0 400]);
+ax = gca;
+ax.FontWeight = 'bold';
+saveas(gcf, [savefolder, '\45degreespectrum.png'])
+
+figure;
+plot(x_value, flipud(C(1:endpoint)), "red")
+title('22.5 degree')
+xlabel('Wavelength(nm)', 'fontweight','bold')
+ylabel('Amplitude', 'fontweight','bold')
+ylim([0 400]);
+ax = gca;
+ax.FontWeight = 'bold';
+saveas(gcf, [savefolder, '\225degreespectrum.png'])
 %% find the difference, sum, and ratio of I0 and I45
 address_45 = 'G:\OCM_FM\E\3Dimage\coopervision\Exp_Sep_16_2022\IRCard\Scan1_S45_R45\pic1\';
 address_0 = 'G:\OCM_FM\E\3Dimage\coopervision\Exp_Sep_16_2022\IRCard\Scan1_S45_R0\pic1\';

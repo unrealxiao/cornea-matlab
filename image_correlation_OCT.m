@@ -1,16 +1,20 @@
 close all;clear all
 
-Path='E:\\3Dimage\\POCM_System\\Human Imaging\\IR_card\\scan\\pic\\Flat\\';
+Path='E:\3Dimage\POCM_System\Human Imaging\IR_card\scan\pic\cross_unflat\';
 %Path='C:\\3Dimage\\Sync_Calibration\\16_microsecond_1\\pic_1 frame missed\\';
 %Path='C:\Users\Patrice TANKAM\Documents\Rochester\Program\1400-June_11_after_correction\';
 %Path='C:\Users\Patrice TANKAM\Documents\Rochester\Program\MEMS-1400_frames-corrected\';
 
- F1=load([Path,'image_11.asc']);
- F2=load([Path,'image_12.asc']);
- FF1=rot90(F1);
- FF2=rot90(F2);
+ FF1=dicomread([Path,'corl109.DCM']);
+ FF2=dicomread([Path,'corl110.DCM']);
+%  FF1=rot90(F1);
+%  FF2=rot90(F2);
 
-
+size = size(FF1);
+ 
+FF1 = FF1(:, 1:(size(1, 2)));
+FF2 = FF2(:, 1:(size(1, 2)));
+ 
 %  F1=imread([Path,'frame951.gif']);
 %  F2=imread([Path,'frame952.gif']);
 %  FF1=F1;%flipud(rot90(F1));
