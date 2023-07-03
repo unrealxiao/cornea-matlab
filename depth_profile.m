@@ -173,4 +173,3 @@ parfor i = 1:1000
     dicomwrite(frame_ratio, ratio_save);
 end
 
-

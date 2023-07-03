@@ -10,8 +10,9 @@ Ext=name(end-3:end);
 numframes = 1000; % number of input frames
 num=1; %initial frame number  %degree of the polynomial fit
 deg2=2;
-threshold=.3; % for the peak detection 
-name=[Path,'frame250.DCM'];
+threshold=.25; % for the peak detection 
+%%
+name=[Path,'frame480.DCM'];
 [I,cmap] = dicomread(name);  % find out size of images by importing one
 %I=flipud(I);
 Cl=class(I);
@@ -61,12 +62,12 @@ name_5= 'frame';
 %     
 %     
 %     frame=flipud(frame);
-    frame = I;
-    frameC = frame(y1:y2, x1:x2); % crop frames
-    
-    %Normalizing 
+frame = I;
+frameC = frame(y1:y2, x1:x2); % crop frames
 
-    frameC64 = double(frameC); %to convert from 16 to double 
+%Normalizing 
+
+frameC64 = double(frameC); %to convert from 16 to double 
 %     frameN = zeros(H,L); %matrix to store normalized figure 
 % 
 %     for l = 1:L 
@@ -86,112 +87,130 @@ name_5= 'frame';
 %     
 %     end
 
-    frameN = (frameC64 - min(min(frameC64))) /(max(max(frameC64)) - min(min(frameC64)));
+frameN = (frameC64 - min(min(frameC64))) /(max(max(frameC64)) - min(min(frameC64)));
 
-    FrameN = medfilt2(frameN,[3 3]); %Applying 2D median filter% 
-    %figure
-    %imshow(frameN) 
 
-    %%Peak Detection 
-
-    ypixels = 1:H; % # of y-pixels = # of rows
-    frameR = zeros(H,L);
-
-    frameR2= zeros(S);
-    xx2=1:L; 
-    yy2=1:H;
-
-    for clmn = 1:L 
-    
-        scan=frameN(:,clmn);
-        scan=smooth(scan);                     
-        [maxtab, mintab]=peakdet(scan,threshold,yy2); 
-   
-        if (isempty(maxtab)==1); %Puts 1 if there is(are) any peak(s) detected
-         [Mvalue,pos]=max(scan);  
-         frameR2(pos,clmn)=1; 
+frameN=medfilt2(frameN); %Applying 2D median filter% 
+frame_size = size(frameN);
+bowman_depth = zeros(1, frame_size(1, 2));
+start = 30;%this is where to start detect bowman
+%i = 6;
+bowman_to_nearby_ratio = 2.0;
+for k = 1:frame_size(1, 2) 
+row_array = frameN(:, k);
+value_array = smoothdata(row_array, "gaussian", 10);
+start_indice = start;
+top10_num = round(frame_size(1, 1) * 0.1);%the size of 0.1 of row_array
+top10_max = maxk(row_array, top10_num);%store the top 10% number 
+avg_top10 = mean(top10_max);%mean of the average top 10%
+low40_num = round(frame_size(1, 1) * 0.6);%the size of 0.4 of row_array
+low40_min = mink(row_array, low40_num);%store the low 40% number 
+avg_low40 = mean(low40_min);
+top2low_ratio = avg_top10 / avg_low40;
+while true
+    nearby_avg_right = start_indice - 25;
+    %nearby_avg_left = start_indice - 20;
+    if start_indice > frame_size(1, 1)
+        break %if reach the start of image array, then stop
+    else
+        if value_array(start_indice) > top2low_ratio * ...
+                mean(value_array(1 : nearby_avg_right))
+            bowman_depth(1, k) = start_indice; %bowman brightness should 
+            %be greater than its sourrounding area times the multiplier
+            %leaving the gap between the start_indice and nearby interval
+            %help reliably detect the peak
+            break
         else
-        frameR2(maxtab(1,1),clmn)=1;
-        end
-    
+            start_indice = start_indice + 1; %if we don't find the brightness
+            %then keep moving
+        end    
     end
+end
 
-%     figure
-%     imshow(frameR2) 
-    [y3, x3]=find(frameR2==1); %will be top surface of the lens
-    P3=polyfit(x3,y3,deg);
-    yy3=polyval(P3, x3);
-%     hold on; plot(x3,yy3,'b','LineWidth',1); hold on;
-%     figure
-%     imshow(frameN); hold on; plot(xx2,yy3,'r','LineWidth',1);
 
-%% Refine the polynomial fit by removing bad peaks from endo flattening upside down
+end
 
-    delta=yy3-y3; %computes the distance between the polynomial and the peaks
-    STD_delta=std(delta);
-    frameR22=frameR2;
-    
-    for clmn=1:L
-        if (abs(delta(clmn))>STD_delta/0.9)
-            frameR22(:,clmn)=0;
-        end
+
+%% eliminate outlier
+close all;
+
+isNZ=(~bowman_depth==0);           % addressing logical array of nonzero elements
+
+
+smooth_bowman = smoothdata(bowman_depth(isNZ), 'movmedian', 5);
+
+x3 = 1:frame_size(1, 2);
+P3=polyfit(x3(isNZ),smooth_bowman(1, :), 2);
+yy3_partial=polyval(P3, x3(isNZ));
+yy3_complete = polyval(P3, x3);
+
+delta=yy3_complete-bowman_depth(1, :); %computes the distance between the polynomial and the peaks
+STD_delta=std(yy3_partial - smooth_bowman);
+avg_bowman = mean(smooth_bowman);
+for clmn=1:frame_size(1, 2)
+    if (abs(delta(clmn))>STD_delta * 0.7)
+        bowman_depth(1,clmn)=yy3_complete(1, clmn);%eliminate outllier by replacing it with avg value
     end
+end
 
-%     figure
-%     imshow(frameR22) 
-    [y4, x4]=find(frameR22==1); %will be top surface of the lens
-    P3=polyfit(x4,y4,deg);
-    yy4=polyval(P3, xx2);
-%     hold on; plot(xx2,yy4,'r','LineWidth',1); hold on;
-%     figure
-    imshow(frameN); hold on; plot(xx2,yy4,'r','LineWidth',1); 
-
+%%
+figure
+imshow(frameN,cmap)
+hold on
+plot(flipud(bowman_depth), 'color', 'yellow')
+figure 
+plot(frameN(:, 60));
+hold on
+xline(bowman_depth(1, 60));
 %% Refine the polynomial fit from cornea_flattening_part 3 upside down
 
-    delta=yy3-y3; %computes the distance between the polynomial and the peaks
-    STD_delta=std(delta);
-    frameR22=frameR2;
-    
-    for clmn=1:L
-        if (abs(delta(clmn))>STD_delta*0.9)
-            frameR22(:,clmn)=0;
-        end
-    end
+% delta=yy3-y3; %computes the distance between the polynomial and the peaks
+% STD_delta=std(delta);
+% frameR22=frameR2;
+% 
+% for clmn=1:L
+%     if (abs(delta(clmn))>STD_delta*0.9)
+%         frameR22(:,clmn)=0;
+%     end
+% end
+% 
+% 
+% [y4, x4]=find(frameR22==1); %will be top surface of the lens
+% cord_arry = zeros(1, L);
+% for in = 1:length(x4)
+%    cord_arry(x4(in)) = y4(in); %add coordinate of the peak into the cord_arry
+% end
+% imshow(frameN); hold on; plot(x4,y4,'r','LineWidth',1); 
 
 
-    [y4, x4]=find(frameR22==1); %will be top surface of the lens
-    cord_arry = zeros(1, L);
-    for in = 1:length(x4)
-       cord_arry(x4(in)) = y4(in); %add coordinate of the peak into the cord_arry
-    end
-    imshow(frameN); hold on; plot(x4,y4,'r','LineWidth',1); 
+%%  flatten one frame only
 
     
  %%  flatten one frame only
-    
-    % F = frame(:,x1:x2); %delete the extra column
-    % %[F, cmap] = imread(name);
-    % %F = F(:, x1:x2);
-    % F64 = double(F) +1 ; %convert to double
-    % F64 = flipud(F64);%flip the images
-    % %F64 = imgaussfilt(F64, 0.8);
-    % S2F=size(F);
-    % H2F=S2F(1,1);
-    % L2F=S2F(1,2);
-    % frameShtwo=zeros(size(F64)); 
-    % 
-    % %moving pixel on F64
-    % delta_matrix = round(max(yy4) - yy4);
-    % k = 1;
-    % for col = 1:L
-    %     if delta_matrix(k, col) > 0
-    %         frameShtwo(1:(H2F - delta_matrix(k, col)), col) = F64((delta_matrix(k, col) + 1):H2F, col);
-    %         frameShtwo((H2F - delta_matrix(k, col) + 1):H2F, col) = F64(1:delta_matrix(k, col), col);
-    %     else
-    %         positive_delta = abs(delta_matrix(k, col));
-    %         frameShtwo(1:positive_delta, col) = F64((H2F - positive_delta + 1):H2F, col);
-    %         frameShtwo((positive_delta + 1):H2F, col) = F64(1:(H2F - positive_delta), col);
-    %     end 
-    % end
-    % %frameShtwo = flipud(frameShtwo);
-    % 
+
+% F = frame(:,x1:x2); %delete the extra column
+% %[F, cmap] = imread(name);
+% %F = F(:, x1:x2);
+% F64 = double(F) +1 ; %convert to double
+% F64 = flipud(F64);%flip the images
+% %F64 = imgaussfilt(F64, 0.8);
+% S2F=size(F);
+% H2F=S2F(1,1);
+% L2F=S2F(1,2);
+% frameShtwo=zeros(size(F64)); 
+% 
+% %moving pixel on F64
+% delta_matrix = round(max(yy4) - yy4);
+% k = 1;
+% for col = 1:L
+%     if delta_matrix(k, col) > 0
+%         frameShtwo(1:(H2F - delta_matrix(k, col)), col) = F64((delta_matrix(k, col) + 1):H2F, col);
+%         frameShtwo((H2F - delta_matrix(k, col) + 1):H2F, col) = F64(1:delta_matrix(k, col), col);
+%     else
+%         positive_delta = abs(delta_matrix(k, col));
+%         frameShtwo(1:positive_delta, col) = F64((H2F - positive_delta + 1):H2F, col);
+%         frameShtwo((positive_delta + 1):H2F, col) = F64(1:(H2F - positive_delta), col);
+%     end 
+% end
+%frameShtwo = flipud(frameShtwo);
+

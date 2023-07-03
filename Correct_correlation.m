@@ -3,7 +3,7 @@ close all
 
 %% model the surface of cornea and flatten it
 %close all
-[delta_matrix, smooth_surf, surface_cornea, Path_flat_save, Path_cross_flat, Path_cross_unflat, number_of_frames, original_scan, crop_scan, flip, Cl, cmap] = cornea_delta(0.16, "Y");
+[delta_matrix, smooth_surf, surface_cornea, Path_flat_save, Path_cross_flat, Path_cross_unflat, number_of_frames, original_scan, crop_scan, flip, Cl, cmap] = cornea_delta(25, 0.1, 0.6, "n");
 %delta matrix return the distance between peak of the surface and each
 %individual point
 %(:, :, 1) of original_scan corresponds to first frame
@@ -19,9 +19,10 @@ surf(smooth_surf, 'FaceColor','r', 'FaceAlpha',0.5, 'EdgeColor','none')
 % 
 % disp('delta matrix complete')
 % %% check the contrast at certain depth
-% depth_frame = original_scan(192, :, :);
+% depth_frame = original_scan(:, 192, :);
 % depth_frame = squeeze(depth_frame);
 % imshow(depth_frame, cmap)
+% [x, ~] = ginput(1);
 % contrast = max(depth_frame, [], 'all') - min(depth_frame, [], 'all')
 % if you want to flatten the data first, then use this code below
 
