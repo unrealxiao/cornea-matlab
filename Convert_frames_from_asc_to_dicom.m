@@ -5,7 +5,7 @@
 %delete(gcp)
 %parpool(20)
 tic
-path='E:\\3Dimage\\POCM_System\\Human Imaging\\IR_card\\scan\\';
+path='E:\\3Dimage\\POCM_System\\Calibration\\resolution\\scan12\\';
 
 newpath=fullfile([path,'pic']);
 mkdir(newpath);
@@ -13,7 +13,7 @@ picpath = fullfile([path, 'image_2.asc']);
 pic_size = size(load(picpath));
 pic_h = pic_size(1, 1);%obtain the size of the picture
 pic_w = pic_size(1, 2);
-parfor ii=1:500  % y
+parfor ii=1:1000  % y
 Intensity=zeros(pic_h, pic_w);
 %path='E:\\3Dimage\\Intensity\\Sync_Testing\\scan1\\';
 %path='C:\\Users\\vwaller\\Desktop\\3D_vwaller\\';
