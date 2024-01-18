@@ -1,22 +1,79 @@
-address_a = 'G:\OCT_POCM_data\Glass-for-double-peak-gaps-measure\glass-R45\pic\';
-name_1 = 'frame';
-name_2 = 250;
-name_3 = '.DCM';
-[image1, cmap1] = dicomread([address_a, strcat(name_1, num2str(name_2 - 2), name_3)]);
-[image2, cmap2] = dicomread([address_a, strcat(name_1, num2str(name_2 - 1), name_3)]);
-[image3, cmap3] = dicomread([address_a, strcat(name_1, num2str(name_2), name_3)]);
-[image4, cmap4] = dicomread([address_a, strcat(name_1, num2str(name_2 + 1), name_3)]);
-[image5, cmap5] = dicomread([address_a, strcat(name_1, num2str(name_2 + 2), name_3)]);
+clear variables;
+close all;
+address_a = 'D:\xiaoliu_onedrive\OneDrive - Indiana University\lab\POCM-polarization measure\power supply depth profile\';
+name_1 = 'source_burn_r45';
+name_2 = 'source_burn_r0';
+name_3 = 'source_burn_r225';
+fileID = fopen([address_a, name_1], 'r');
+fileID2 = fopen([address_a, name_2], 'r');
+fileID3 = fopen([address_a, name_3], 'r');
+formatSpec = '%f';
+A = fscanf(fileID, formatSpec);
+B = fscanf(fileID2, formatSpec);
+C = fscanf(fileID3, formatSpec);
+A = A(1:11:end);
+B = B(1:11:end);
+C = C(1:11:end);
+x_scale = (1:length(A)/2) * 0.00096966;% scaling factor in air
+% [image1, cmap1] = imread([address_a, strcat(name_1, num2str(name_2), name_3)]);
+% [image2, cmap2] = dicomread([address_a, strcat(name_1, num2str(name_2 - 1), name_3)]);
+% [image3, cmap3] = dicomread([address_a, strcat(name_1, num2str(name_2), name_3)]);
+% [image4, cmap4] = dicomread([address_a, strcat(name_1, num2str(name_2 + 1), name_3)]);
+% [image5, cmap5] = dicomread([address_a, strcat(name_1, num2str(name_2 + 2), name_3)]);
 
-Avg_img = (image1 + image2 + image3 + image4 + image5) / 5;
-[row, col] = size(Avg_img);
-%figure;
-plot(Avg_img(:, round(col/2)))
-ylim([0 250])
-hold on
 %% plot image and its depth map
+savefolder = '\\iu-opt-research\TankamLab\PPTs of RESULTS and PRESENTATIONS\POCM\Calibration\cross-correlation-images';
+
+close all
 figure;
-imshow(Avg_img, cmap1);
+plot(x_scale, A(2049:end), "blue")
+title('0 degree')
+xlabel('Depth(mm)', 'fontweight','bold')
+ylabel('Intensity(a.u)', 'fontweight','bold')
+ylim([0 10]);
+ax = gca;
+ax.FontWeight = 'bold';
+saveas(gcf, [savefolder, '\0degree.png'])
+
+figure;
+plot(x_scale, B(2049:end),  "green")
+title('45 degree')
+xlabel('Depth(mm)', 'fontweight','bold')
+ylabel('Intensity(a.u)', 'fontweight','bold')
+ax = gca;
+ax.FontWeight = 'bold';
+ylim([0 2.5]);
+xlim([0.5 0.58]);
+saveas(gcf, [savefolder, '\45degree.png'])
+
+figure;
+plot(x_scale, C(2049:end),  "red")
+title('22.5 degree')
+xlabel('Depth(mm)', 'fontweight','bold')
+ylabel('Intensity(a.u)', 'fontweight','bold')
+ax = gca;
+ax.FontWeight = 'bold';
+ylim([0 10]);
+saveas(gcf, [savefolder, '\225degree.png'])
+%contrast = max(Avg_img, [], 'all') - min(Avg_img, [], 'all');
+
+%% zoom
+close all
+figure;
+half_axis = length(x_scale);
+plot(x_scale, A(2049:end), "blue")
+hold on
+plot(x_scale, B(2049:end),  "green")
+hold on
+plot(x_scale, C(2049:end),  "red")
+xlabel('Depth(mm)', 'fontweight','bold')
+ylabel('Intensity(a.u)', 'fontweight','bold')
+ax = gca;
+ax.FontWeight = 'bold';
+ylim([0 7]);
+
+xlim([0.3 0.6]);
+%xlim([0.16 0.36])
 
 
 %% find the difference, sum, and ratio of I0 and I45
