@@ -60,10 +60,7 @@ saveas(gcf, [savefolder, '\225degree.png'])
 %% zoom
 close all
 figure;
-<<<<<<< HEAD
 half_axis = length(x_scale);
-=======
->>>>>>> 8298267a5b104d15c7b0d892b0fe50af92030aba
 plot(x_scale, A(2049:end), "blue")
 hold on
 plot(x_scale, B(2049:end),  "green")
@@ -73,12 +70,6 @@ xlabel('Depth(mm)', 'fontweight','bold')
 ylabel('Intensity(a.u)', 'fontweight','bold')
 ax = gca;
 ax.FontWeight = 'bold';
-<<<<<<< HEAD
-ylim([0 7]);
-
-xlim([0.3 0.6]);
-%xlim([0.16 0.36])
-=======
 ylim([0 2.5]);
 
 xlim([0.5 0.58]);
@@ -100,7 +91,7 @@ B = fscanf(fileID2, formatSpec);
 C = fscanf(fileID3, formatSpec);
 endpoint = round(length(A) / 11);
 x_value = linspace(750, 930, 2048);
->>>>>>> 8298267a5b104d15c7b0d892b0fe50af92030aba
+
 
 
 figure;
