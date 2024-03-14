@@ -2,10 +2,10 @@
 clear all;
 tic
 
-path=uigetdir('E:\\3Dimage\\POCM_System\Human_Imaging\OK1_V1_2023_2_7\\',' Choose the MAIN FOLDER');
-nb_scan =34;
+path=uigetdir('E:\3Dimage\POCM_System\Human_Imaging\OK2-V2_2023-3-30\\',' Choose the MAIN FOLDER');
+nb_scan =28;
 
-for scan =22:nb_scan
+for scan =1:nb_scan
 folder=['\scan',num2str(scan),'\'];
 pathfile=[path,folder];
 newpath=fullfile([pathfile,'pic']);%create a new folder to store the dicom files

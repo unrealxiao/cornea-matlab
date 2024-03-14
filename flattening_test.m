@@ -185,6 +185,9 @@ xline(bowman_depth(1, 60));
 
 %%  flatten one frame only
 
+    
+ %%  flatten one frame only
+
 % F = frame(:,x1:x2); %delete the extra column
 % %[F, cmap] = imread(name);
 % %F = F(:, x1:x2);
@@ -210,4 +213,4 @@ xline(bowman_depth(1, 60));
 %     end 
 % end
 %frameShtwo = flipud(frameShtwo);
-    
+
