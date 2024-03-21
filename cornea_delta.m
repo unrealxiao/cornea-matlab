@@ -183,7 +183,7 @@ parfor i = 1:numframes
     STD_delta=std(yy3_partial - smooth_bowman);
     %avg_bowman = mean(smooth_bowman);
     for clmn=1:frame_size(1, 2)
-        if (abs(delta(clmn))>STD_delta * 0.7)
+        if (abs(delta(clmn))>STD_delta * 0.5)
             bowman_depth(1,clmn)=yy3_complete(1, clmn);%eliminate outllier by replacing it with avg value
         end
     end
